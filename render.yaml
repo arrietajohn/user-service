@@ -19,4 +19,7 @@ services:
         sync: false
       - key: DB_SSL_MODE
         value: REQUIRED
-
+      - key: RABBITMQ_URL
+        sync: false
+      - key: RABBITMQ_DOMAIN_EXCHANGE
+        value: domain.events
