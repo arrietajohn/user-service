@@ -1,2 +1,5 @@
-# user-service
-"Microservicio de Gestión de Usuarios (CRUDL, autenticación y autorización) desarrollado con Arquitectura Hexagonal y DDD. Se integra de forma síncrona y asíncrona con el ecosistema para orquestar flujos de negocio clave, como la creación de expedientes contables y la notificación de operaciones en el ciclo de vida del usuario."
+# Users Management — Spring Boot, Arquitectura Hexagonal y DDD
+
+Aplicación de gestión de usuarios construida con Java 17 y Spring Boot. La API REST es el punto de entrada activo. El código de la antigua CLI se conserva como adaptador inactivo y no posee un contenedor de dependencias independiente.
+
+Spring es el único *composition root*: `Main` inicia el contexto y las dependencias se resuelven mediante configuración y component scanning de Spring.

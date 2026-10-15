@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.5</version>
+  </parent>
+
+  <groupId>com.jcaa.usersmanagement</groupId>
+  <artifactId>users-management</artifactId>
+  <version>0.0.1</version>
+
+  <properties>
+    <!-- El parent de Spring Boot usa java.version para configurar el compilador -->
+    <java.version>17</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+  </properties>
+
+  <dependencies>
+
+    <!-- ======================================================== -->
+    <!-- Spring Boot Starters                                       -->
+    <!-- ======================================================== -->
+
+    <!-- Web: incluye Tomcat embebido, Jackson, HibernateValidator, SLF4J + Logback -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+
+      <!-- Spring Boot Maven Plugin: empaquetado ejecutable -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <!-- Clase principal explícita — evita fallo de detección antes de PR-02 -->
+          <mainClass>com.jcaa.usersmanagement.Main</mainClass>
+          <!-- Excluir Lombok del JAR final -->
+          <excludes>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!-- Compilador: versión y source/target gestionados por el parent via java.version -->
+      <!-- Se conserva solo la configuración del annotation processor de Lombok           -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+
+      <!-- Surefire: versión gestionada por el parent -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>
+
