@@ -23,3 +23,8 @@ services:
         sync: false
       - key: RABBITMQ_DOMAIN_EXCHANGE
         value: domain.events
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_SECONDS
+        value: "900"
+
