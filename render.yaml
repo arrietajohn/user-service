@@ -12,7 +12,7 @@ services:
       - key: DB_PORT
         sync: false
       - key: DB_NAME
-        value: crud_usuarios
+        sync: false
       - key: DB_USERNAME
         sync: false
       - key: DB_PASSWORD
@@ -22,7 +22,7 @@ services:
       - key: RABBITMQ_URL
         sync: false
       - key: RABBITMQ_DOMAIN_EXCHANGE
-        value: domain.events
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRATION_SECONDS
