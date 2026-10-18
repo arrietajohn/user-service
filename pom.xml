@@ -158,6 +158,22 @@
 
   <build>
     <plugins>
+      <!-- Compilar y ejecutar pruebas con JDK 17 aunque Maven use otro JDK. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-toolchains-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>select-jdk-toolchain</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <version>[17,18)</version>
+        </configuration>
+      </plugin>
 
       <!-- Spring Boot Maven Plugin: empaquetado ejecutable -->
       <plugin>

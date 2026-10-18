@@ -1,5 +1,19 @@
 # Users Management — Spring Boot, Arquitectura Hexagonal y DDD
 
-Aplicación de gestión de usuarios construida con Java 17 y Spring Boot. La API REST es el punto de entrada activo. El código de la antigua CLI se conserva como adaptador inactivo y no posee un contenedor de dependencias independiente.
+Aplicación de gestión de usuarios construida con Java 17 y Spring Boot. La API REST es el punto de entrada activo. El servicio expone la API REST y ya no incluye el adaptador de escritorio de la antigua CLI.
 
 Spring es el único *composition root*: `Main` inicia el contexto y las dependencias se resuelven mediante configuración y component scanning de Spring.
+
+## Compilar y verificar
+
+Usar JDK 17, igual que el Dockerfile. En PowerShell, si el PATH selecciona Java 25:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-17.0.14.7-hotspot'
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+.\mvnw.cmd clean verify
+```
+
+Ajustar JAVA_HOME a la instalacion local de JDK 17. Lombok 1.18.36 no permite compilar este proyecto con Java 25.
+
+La prueba del antiguo controlador de escritorio se conserva en `src/legacy-test/java` como referencia historica. No pertenece a la suite activa porque user-service ya no incluye el adaptador desktop. Las pruebas de la API REST permanecen en `src/test/java`.
