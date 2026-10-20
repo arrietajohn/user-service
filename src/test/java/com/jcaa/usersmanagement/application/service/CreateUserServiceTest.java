@@ -35,6 +35,7 @@ import com.jcaa.usersmanagement.domain.valueobject.UserPassword;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validation;
 import jakarta.validation.ValidatorFactory;
+import com.jcaa.usersmanagement.application.service.dto.result.CreateUserResult;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -92,7 +93,9 @@ class CreateUserServiceTest {
     when(saveUserPort.save(any())).thenReturn(savedUser);
 
     // Act
-    final UserModel result = service.execute(command);
+    final CreateUserResult outcome = service.execute(command);
+    final UserModel result = outcome.user();
+    assertEquals(true, outcome.created());
 
     // Assert
     assertAll(
@@ -176,8 +179,12 @@ class CreateUserServiceTest {
         .thenReturn(Optional.empty(), Optional.of(user));
     when(saveUserPort.save(any())).thenReturn(user);
 
-    assertSame(user, service.execute(command));
-    assertSame(user, service.execute(command));
+    final CreateUserResult first = service.execute(command);
+    final CreateUserResult retry = service.execute(command);
+    assertSame(user, first.user());
+    assertSame(user, retry.user());
+    assertEquals(true, first.created());
+    assertEquals(false, retry.created());
 
     verify(saveUserPort, times(1)).save(any());
     verify(publishDomainEventPort, times(1)).publish(any(UserCreatedDomainEvent.class));
@@ -206,7 +213,9 @@ class CreateUserServiceTest {
     when(saveUserPort.save(any()))
         .thenThrow(UserAlreadyExistsException.becauseIdOrEmailAlreadyExists());
 
-    assertSame(user, service.execute(retryCommand()));
+    final CreateUserResult result = service.execute(retryCommand());
+    assertSame(user, result.user());
+    assertEquals(false, result.created());
     verify(saveUserPort, times(1)).save(any());
     verifyNoInteractions(publishDomainEventPort);
   }

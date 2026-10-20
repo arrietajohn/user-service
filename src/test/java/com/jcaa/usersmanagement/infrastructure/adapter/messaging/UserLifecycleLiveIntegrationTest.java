@@ -127,7 +127,7 @@ class UserLifecycleLiveIntegrationTest {
           // Act
           stage = "create and user.created confirmation";
           final UserModel created = create.execute(new CreateUserCommand(
-              testUserId.value(), CREATED_NAME, email, TEST_PASSWORD, MEMBER_ROLE));
+              testUserId.value(), CREATED_NAME, email, TEST_PASSWORD, MEMBER_ROLE)).user();
           // Assert
           assertThat(repository.getById(testUserId)).isPresent();
           assertUserEvent(received, CREATED_EVENT, created);
