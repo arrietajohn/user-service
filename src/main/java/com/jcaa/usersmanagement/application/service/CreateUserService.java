@@ -16,6 +16,7 @@ import com.jcaa.usersmanagement.domain.enums.UserRole;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import com.jcaa.usersmanagement.application.service.dto.result.CreateUserResult;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -31,13 +32,13 @@ public class CreateUserService implements CreateUserUseCase {
   private final Validator validator;
 
   @Override
-  public UserModel execute(final CreateUserCommand command) {
+  public CreateUserResult execute(final CreateUserCommand command) {
     validateCommand(command);
 
     final UserEmail email = new UserEmail(command.email());
     final Optional<UserModel> existing = getUserByEmailPort.getByEmail(email);
     if (existing.isPresent()) {
-      return resolveExisting(existing.get(), command);
+      return CreateUserResult.existing(resolveExisting(existing.get(), command));
     }
 
     final UserModel userToSave = UserApplicationMapper.fromCreateCommandToModel(command);
@@ -48,14 +49,14 @@ public class CreateUserService implements CreateUserUseCase {
       // Otra solicitud pudo insertar el usuario despues de la consulta inicial.
       final Optional<UserModel> concurrentUser = getUserByEmailPort.getByEmail(email);
       if (concurrentUser.isPresent()) {
-        return resolveExisting(concurrentUser.get(), command);
+        return CreateUserResult.existing(resolveExisting(concurrentUser.get(), command));
       }
       throw exception;
     }
 
     publishDomainEventPort.publish(new UserCreatedDomainEvent(savedUser));
 
-    return savedUser;
+    return CreateUserResult.created(savedUser);
   }
 
   private void validateCommand(final CreateUserCommand command) {

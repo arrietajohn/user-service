@@ -73,7 +73,7 @@ class CreateUserIdempotencyTest {
         .andExpect(status().isCreated()).andExpect(jsonPath("$.password").doesNotExist())
         .andReturn().getResponse().getContentAsString();
     mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(REQUEST))
-        .andExpect(status().isCreated()).andExpect(content().json(firstBody));
+        .andExpect(status().isOk()).andExpect(content().json(firstBody));
 
     verify(saveUserPort, times(1)).save(any());
     verify(events, times(1)).publish(any(UserCreatedDomainEvent.class));
@@ -100,5 +100,32 @@ class CreateUserIdempotencyTest {
         .andExpect(status().isInternalServerError())
         .andExpect(jsonPath("$.message").value("Error de persistencia."));
     verifyNoInteractions(events);
+  }
+
+  @Test
+  void shouldReturn200WhenConcurrentRequestAlreadyCreatedSameUser() throws Exception {
+    final UserModel user = new UserModel(new UserId("u-retry"), new UserName("Jane Doe"),
+        new UserEmail("jane@example.com"), UserPassword.fromPlainText("Pass5678"),
+        UserRole.MEMBER, UserStatus.PENDING);
+    when(getUserByEmailPort.getByEmail(any()))
+        .thenReturn(Optional.empty(), Optional.of(user));
+    when(saveUserPort.save(any()))
+        .thenThrow(UserAlreadyExistsException.becauseIdOrEmailAlreadyExists());
+
+    mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(REQUEST))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.id").value("u-retry"));
+    verifyNoInteractions(events);
+  }
+
+  @Test
+  void shouldReturn409WhenSameEmailHasDifferentRegistrationData() throws Exception {
+    final UserModel user = new UserModel(new UserId("u-retry"), new UserName("Other Name"),
+        new UserEmail("jane@example.com"), UserPassword.fromPlainText("Pass5678"),
+        UserRole.MEMBER, UserStatus.PENDING);
+    when(getUserByEmailPort.getByEmail(any())).thenReturn(Optional.of(user));
+
+    mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(REQUEST))
+        .andExpect(status().isConflict()).andExpect(jsonPath("$.status").value(409));
+    verifyNoInteractions(saveUserPort, events);
   }
 }

@@ -16,7 +16,9 @@ import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.response.User
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.mapper.UserRestMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.jcaa.usersmanagement.application.service.dto.result.CreateUserResult;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,11 +43,11 @@ public class UserRestController implements UserRestControllerDocs {
   private final GetAllUsersUseCase getAllUsersUseCase;
 
   @PostMapping
-  @ResponseStatus(HttpStatus.CREATED)
-  public UserRestResponse create(@Valid @RequestBody final CreateUserRestRequest request) {
+  public ResponseEntity<UserRestResponse> create(@Valid @RequestBody final CreateUserRestRequest request) {
     final CreateUserCommand command = UserRestMapper.toCreateCommand(request);
-    final UserModel user = createUserUseCase.execute(command);
-    return UserRestMapper.toResponse(user);
+    final CreateUserResult result = createUserUseCase.execute(command);
+    final HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
+    return ResponseEntity.status(status).body(UserRestMapper.toResponse(result.user()));
   }
 
   @GetMapping

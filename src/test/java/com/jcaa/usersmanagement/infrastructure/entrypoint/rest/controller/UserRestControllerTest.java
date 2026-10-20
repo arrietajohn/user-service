@@ -33,6 +33,7 @@ import com.jcaa.usersmanagement.infrastructure.security.JwtTokenService;
 import com.jcaa.usersmanagement.infrastructure.security.RestAccessDeniedHandler;
 import com.jcaa.usersmanagement.infrastructure.security.RestAuthenticationEntryPoint;
 import com.jcaa.usersmanagement.infrastructure.security.SecurityConfig;
+import com.jcaa.usersmanagement.application.service.dto.result.CreateUserResult;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -114,7 +115,7 @@ class UserRestControllerTest {
             UserStatus.ACTIVE);
     when(createUserUseCase.execute(
             new CreateUserCommand(ID, "Ada Lovelace", "ada@example.com", "Secure123!", "ADMIN")))
-        .thenReturn(user);
+        .thenReturn(CreateUserResult.created(user));
 
     mockMvc
         .perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(request))

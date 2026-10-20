@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -38,12 +39,19 @@ public interface UserRestControllerDocs {
           "Registra un nuevo usuario en el sistema. "
               + "Repetir el mismo ID, nombre, correo, rol y contrasena devuelve el usuario existente "
               + "sin guardar ni publicar otro evento. Si el ID o correo pertenece a datos diferentes, "
-              + "responde 409. Se conserva 201 en los reintentos exitosos. "
+              + "responde 409. Responde 201 al crear y 200 en los reintentos exitosos. "
               + "Al registrar el usuario se publica un evento de creacion.")
   @ApiResponses({
     @ApiResponse(
+        responseCode = "200",
+        description = "Usuario existente recuperado al repetir la misma solicitud.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = UserRestResponse.class))),
+    @ApiResponse(
         responseCode = "201",
-        description = "Usuario creado o recuperado al repetir la misma solicitud.",
+        description = "Usuario creado exitosamente.",
         content =
             @Content(
                 mediaType = "application/json",
@@ -70,7 +78,7 @@ public interface UserRestControllerDocs {
                 mediaType = "application/json",
                 schema = @Schema(implementation = ApiErrorResponse.class)))
   })
-  UserRestResponse create(@Valid @RequestBody CreateUserRestRequest request);
+  ResponseEntity<UserRestResponse> create(@Valid @RequestBody CreateUserRestRequest request);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // GET /api/users

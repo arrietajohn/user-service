@@ -21,10 +21,13 @@ La prueba del antiguo controlador de escritorio se conserva en `src/legacy-test/
 ## Creacion idempotente de usuarios
 
 `POST /api/users` permite reintentar la creacion con el mismo ID, nombre, correo,
-rol y contrasena: devuelve el usuario existente con `201`, sin insertar otra fila
+rol y contrasena: devuelve el usuario existente con `200`, sin insertar otra fila
 ni publicar otro evento de creacion. El ID debe conservarse entre reintentos; el correo
 solo no identifica una repeticion de la misma solicitud. Si el ID o correo ya
 esta ocupado por datos diferentes, devuelve `409`. Los duplicados detectados
 por TiDB durante solicitudes concurrentes tambien se resuelven con estas reglas.
 La comparacion usa los valores normalizados del dominio y verifica la contrasena
 contra el hash almacenado; la contrasena no se incluye en la respuesta.
+
+La creacion inicial satisfactoria responde `201`; el cuerpo conserva el mismo formato
+en la creacion y en los reintentos exitosos.
