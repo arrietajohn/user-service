@@ -1,6 +1,10 @@
 package com.jcaa.usersmanagement.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.times;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -163,4 +167,81 @@ class CreateUserServiceTest {
     assertThrows(ConstraintViolationException.class, () -> service.execute(command));
     verifyNoInteractions(saveUserPort, getUserByEmailPort, publishDomainEventPort);
   }
+
+  @Test
+  void shouldReturnExistingUserOnRetryWithoutSavingOrPublishingAgain() {
+    final CreateUserCommand command = retryCommand();
+    final UserModel user = retryUser();
+    when(getUserByEmailPort.getByEmail(any()))
+        .thenReturn(Optional.empty(), Optional.of(user));
+    when(saveUserPort.save(any())).thenReturn(user);
+
+    assertSame(user, service.execute(command));
+    assertSame(user, service.execute(command));
+
+    verify(saveUserPort, times(1)).save(any());
+    verify(publishDomainEventPort, times(1)).publish(any(UserCreatedDomainEvent.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"id", "name", "password", "role"})
+  void shouldRejectDifferentDataForExistingEmail(String changedField) {
+    final CreateUserCommand command = new CreateUserCommand(
+        changedField.equals("id") ? "another-id" : "u-retry",
+        changedField.equals("name") ? "Other Name" : "Jane Doe",
+        "jane@example.com",
+        changedField.equals("password") ? "Different123" : "Pass5678",
+        changedField.equals("role") ? "ADMIN" : "MEMBER");
+    when(getUserByEmailPort.getByEmail(any())).thenReturn(Optional.of(retryUser()));
+
+    assertThrows(UserAlreadyExistsException.class, () -> service.execute(command));
+    verifyNoInteractions(saveUserPort, publishDomainEventPort);
+  }
+
+  @Test
+  void shouldResolveDuplicateFromConcurrentIdenticalCreationWithoutAnotherEvent() {
+    final UserModel user = retryUser();
+    when(getUserByEmailPort.getByEmail(any()))
+        .thenReturn(Optional.empty(), Optional.of(user));
+    when(saveUserPort.save(any()))
+        .thenThrow(UserAlreadyExistsException.becauseIdOrEmailAlreadyExists());
+
+    assertSame(user, service.execute(retryCommand()));
+    verify(saveUserPort, times(1)).save(any());
+    verifyNoInteractions(publishDomainEventPort);
+  }
+
+  @Test
+  void shouldKeepConflictWhenDuplicateIdBelongsToDifferentEmail() {
+    when(getUserByEmailPort.getByEmail(any())).thenReturn(Optional.empty());
+    when(saveUserPort.save(any()))
+        .thenThrow(UserAlreadyExistsException.becauseIdOrEmailAlreadyExists());
+
+    assertThrows(UserAlreadyExistsException.class, () -> service.execute(retryCommand()));
+    verifyNoInteractions(publishDomainEventPort);
+  }
+
+  @Test
+  void shouldKeepConflictWhenConcurrentCreationUsesDifferentData() {
+    when(getUserByEmailPort.getByEmail(any()))
+        .thenReturn(Optional.empty(), Optional.of(retryUser()));
+    when(saveUserPort.save(any()))
+        .thenThrow(UserAlreadyExistsException.becauseIdOrEmailAlreadyExists());
+    final CreateUserCommand command =
+        new CreateUserCommand("other-id", "Jane Doe", "jane@example.com", "Pass5678", "MEMBER");
+
+    assertThrows(UserAlreadyExistsException.class, () -> service.execute(command));
+    verifyNoInteractions(publishDomainEventPort);
+  }
+
+  private CreateUserCommand retryCommand() {
+    return new CreateUserCommand("u-retry", "Jane Doe", "jane@example.com", "Pass5678", "MEMBER");
+  }
+
+  private UserModel retryUser() {
+    return new UserModel(new UserId("u-retry"), new UserName("Jane Doe"),
+        new UserEmail("jane@example.com"), UserPassword.fromPlainText("Pass5678"),
+        UserRole.MEMBER, UserStatus.ACTIVE);
+  }
+
 }

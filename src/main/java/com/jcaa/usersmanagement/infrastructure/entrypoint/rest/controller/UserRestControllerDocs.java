@@ -36,12 +36,14 @@ public interface UserRestControllerDocs {
       summary = "Crear usuario",
       description =
           "Registra un nuevo usuario en el sistema. "
-              + "El ID debe ser único y el correo no puede estar en uso. "
-              + "Se enviará un correo de bienvenida con las credenciales al registrarlo.")
+              + "Repetir el mismo ID, nombre, correo, rol y contrasena devuelve el usuario existente "
+              + "sin guardar ni publicar otro evento. Si el ID o correo pertenece a datos diferentes, "
+              + "responde 409. Se conserva 201 en los reintentos exitosos. "
+              + "Al registrar el usuario se publica un evento de creacion.")
   @ApiResponses({
     @ApiResponse(
         responseCode = "201",
-        description = "Usuario creado exitosamente.",
+        description = "Usuario creado o recuperado al repetir la misma solicitud.",
         content =
             @Content(
                 mediaType = "application/json",
@@ -55,7 +57,7 @@ public interface UserRestControllerDocs {
                 schema = @Schema(implementation = ApiErrorResponse.class))),
     @ApiResponse(
         responseCode = "409",
-        description = "Ya existe un usuario registrado con ese correo electrónico.",
+        description = "El ID o correo ya esta registrado con datos diferentes.",
         content =
             @Content(
                 mediaType = "application/json",

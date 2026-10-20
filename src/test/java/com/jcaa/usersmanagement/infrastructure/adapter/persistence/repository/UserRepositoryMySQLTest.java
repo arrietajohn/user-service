@@ -7,6 +7,9 @@ import static org.mockito.Mockito.*;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
+import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import com.jcaa.usersmanagement.domain.model.UserModel;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
@@ -425,4 +428,28 @@ class UserRepositoryMySQLTest {
         () -> repository.delete(userId),
         "must throw PersistenceException when DELETE raises SQLException");
   }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"PRIMARY", "email"})
+  void shouldTranslateDuplicateKeyIntoDomainConflict(String key) throws SQLException {
+    when(dataSource.getConnection()).thenReturn(connection);
+    when(connection.prepareStatement(anyString())).thenReturn(statement);
+    when(statement.executeUpdate()).thenThrow(
+        new SQLException("Duplicate entry for key " + key, "23000", 1062));
+
+    assertThrows(UserAlreadyExistsException.class, () -> repository.save(userModel));
+    verify(statement, never()).executeQuery();
+    verify(connection).close();
+  }
+
+  @Test
+  void shouldNotTreatOtherIntegrityErrorsAsDuplicateUsers() throws SQLException {
+    when(dataSource.getConnection()).thenReturn(connection);
+    when(connection.prepareStatement(anyString())).thenReturn(statement);
+    when(statement.executeUpdate()).thenThrow(
+        new SQLException("Column cannot be null", "23000", 1048));
+
+    assertThrows(PersistenceException.class, () -> repository.save(userModel));
+  }
+
 }

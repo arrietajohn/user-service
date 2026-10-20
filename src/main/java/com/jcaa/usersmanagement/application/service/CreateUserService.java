@@ -10,9 +10,13 @@ import com.jcaa.usersmanagement.domain.event.UserCreatedDomainEvent;
 import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
+import com.jcaa.usersmanagement.domain.valueobject.UserId;
+import com.jcaa.usersmanagement.domain.valueobject.UserName;
+import com.jcaa.usersmanagement.domain.enums.UserRole;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,10 +35,23 @@ public class CreateUserService implements CreateUserUseCase {
     validateCommand(command);
 
     final UserEmail email = new UserEmail(command.email());
-    ensureEmailIsNotTaken(email);
+    final Optional<UserModel> existing = getUserByEmailPort.getByEmail(email);
+    if (existing.isPresent()) {
+      return resolveExisting(existing.get(), command);
+    }
 
     final UserModel userToSave = UserApplicationMapper.fromCreateCommandToModel(command);
-    final UserModel savedUser = saveUserPort.save(userToSave);
+    final UserModel savedUser;
+    try {
+      savedUser = saveUserPort.save(userToSave);
+    } catch (final UserAlreadyExistsException exception) {
+      // Otra solicitud pudo insertar el usuario despues de la consulta inicial.
+      final Optional<UserModel> concurrentUser = getUserByEmailPort.getByEmail(email);
+      if (concurrentUser.isPresent()) {
+        return resolveExisting(concurrentUser.get(), command);
+      }
+      throw exception;
+    }
 
     publishDomainEventPort.publish(new UserCreatedDomainEvent(savedUser));
 
@@ -48,12 +65,14 @@ public class CreateUserService implements CreateUserUseCase {
     }
   }
 
-  private void ensureEmailIsNotTaken(final UserEmail email) {
-    getUserByEmailPort
-        .getByEmail(email)
-        .ifPresent(
-            ignored -> {
-              throw UserAlreadyExistsException.becauseEmailAlreadyExists(email.value());
-            });
+  private UserModel resolveExisting(final UserModel existing, final CreateUserCommand command) {
+    if (existing.getId().equals(new UserId(command.id()))
+        && existing.getEmail().equals(new UserEmail(command.email()))
+        && existing.getName().equals(new UserName(command.name()))
+        && existing.getRole() == UserRole.fromString(command.role())
+        && existing.getPassword().verifyPlain(command.password())) {
+      return existing;
+    }
+    throw UserAlreadyExistsException.becauseIdOrEmailAlreadyExists();
   }
 }

@@ -11,4 +11,8 @@ public final class UserAlreadyExistsException extends DomainException {
   public static UserAlreadyExistsException becauseEmailAlreadyExists(final String email) {
     return new UserAlreadyExistsException(String.format(MESSAGE_EMAIL_EXISTS, email));
   }
+
+  public static UserAlreadyExistsException becauseIdOrEmailAlreadyExists() {
+    return new UserAlreadyExistsException("A user with that ID or email already exists.");
+  }
 }
