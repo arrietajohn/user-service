@@ -12,7 +12,7 @@
 
   <groupId>com.jcaa.usersmanagement</groupId>
   <artifactId>users-management</artifactId>
-  <version>0.5.0</version>
+  <version>0.6.0</version>
 
   <properties>
     <!-- El parent de Spring Boot usa java.version para configurar el compilador -->
@@ -179,6 +179,13 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build-info</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
           <!-- Clase principal explícita — evita fallo de detección antes de PR-02 -->
           <mainClass>com.jcaa.usersmanagement.Main</mainClass>

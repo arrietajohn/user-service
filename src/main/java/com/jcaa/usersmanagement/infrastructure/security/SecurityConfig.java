@@ -42,6 +42,8 @@ public class SecurityConfig {
                 authorization
                     .requestMatchers(AUTH_LOGIN_PATH)
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/health")
+                    .permitAll()
                     .requestMatchers(OPEN_API_PATHS)
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, USERS_PATH)
