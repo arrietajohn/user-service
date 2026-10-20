@@ -7,6 +7,7 @@ import com.jcaa.usersmanagement.application.port.out.GetUserByIdPort;
 import com.jcaa.usersmanagement.application.port.out.SaveUserPort;
 import com.jcaa.usersmanagement.application.port.out.UpdateUserPort;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
+import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
@@ -143,6 +144,9 @@ public class UserRepositoryMySQL
       statement.setString(6, dto.status());
       statement.executeUpdate();
     } catch (final SQLException exception) {
+      if (exception.getErrorCode() == 1062) {
+        throw UserAlreadyExistsException.becauseIdOrEmailAlreadyExists();
+      }
       throw PersistenceException.becauseSaveFailed(dto.id(), exception);
     }
   }
